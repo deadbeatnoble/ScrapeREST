@@ -1,14 +1,15 @@
 package com.example.route
 
+import com.example.core.ChapterResponseListener
+import com.example.core.ResponseListener
+import com.example.core.srpChapter
 import com.example.core.srpWholePage
 import com.example.data.ChapterResponseModel
-import com.example.data.PageModel
-import com.example.util.Document
+import com.example.data.ErrorResponseModel
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.jsoup.Jsoup
 
 fun Route.chapterRoute() {
     route("/chapter") {
@@ -26,41 +27,52 @@ fun Route.chapterRoute() {
 
             val url = "https://chapmanganato.to/${manga_id}/${chapter_id}"
 
-            call.respond(srpChapter(html = srpWholePage(baseUrl = url), referrer = url))
+            var successResponse = ChapterResponseModel(
+                response = "",
+                data = emptyList(),
+                referrer = ""
+            )
+            var errorResponse = ErrorResponseModel(
+                response = "",
+                error = ""
+            )
+
+            srpWholePage(
+                baseUrl = url,
+                responseListener = object: ResponseListener {
+                    override fun onSuccess(data: String) {
+                        srpChapter(
+                            html = data,
+                            referrer = url,
+                            chapterResponseListener = object: ChapterResponseListener {
+                                override fun onSuccess(data: ChapterResponseModel) {
+                                    successResponse = data
+                                }
+
+                                override fun onFailure(message: String) {
+                                    errorResponse = ErrorResponseModel(
+                                        response = "ok",
+                                        error = "$message $url"
+                                    )
+                                }
+
+                            }
+                        )
+                    }
+
+                    override fun onFailure(message: String) {
+                        errorResponse = ErrorResponseModel(
+                            response = "ok",
+                            error = message
+                        )
+                    }
+
+                }
+            )
+
+            val response = if (successResponse.data.isEmpty()) errorResponse else successResponse
+
+            call.respond(response)
         }
     }
-}
-
-fun srpChapter(
-    html: String,
-    referrer: String
-): ChapterResponseModel {
-
-    val document = Jsoup.parse(html)
-    val pageList = mutableListOf<PageModel>()
-
-    val chapter_reader_list = document.getElementsByClass("container-chapter-reader").select("img")
-
-    for (chapter_reader in  chapter_reader_list) {
-        chapter_reader?.let {
-            pageList.add(
-                PageModel(
-                    title = it.attr("title"),
-                    pageImageUrl = it.attr("src")
-                )
-            )
-        } ?: pageList.add(
-            PageModel(
-                title = null,
-                pageImageUrl = null
-            )
-        )
-    }
-
-
-    return ChapterResponseModel(
-        response = "ok",
-        data = pageList,
-        referrer = referrer
-    )
 }
