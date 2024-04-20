@@ -33,4 +33,4 @@ The base URL for the ScrapeREST API is `https://scrape-v1-0.onrender.com`.
 - Docker: A containerization platform used for packaging the application and its dependencies into a standardized unit for easy deployment and scalability.
 
 ## Author
-- Deadbeatnoble (https://github.com/deadbeatnoble)
+- [Deadbeatnoble](https://github.com/deadbeatnoble)
