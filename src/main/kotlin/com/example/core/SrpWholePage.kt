@@ -4,12 +4,13 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import kotlinx.coroutines.delay
 
 suspend fun srpWholePage(
     baseUrl: String,
     responseListener: ResponseListener
 ) {
-
+    delay(3000)
     try {
         val client = HttpClient(CIO)
         val doc = client.get(baseUrl)
